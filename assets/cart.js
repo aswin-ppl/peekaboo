@@ -21,20 +21,31 @@
 
   function findProductData(root){
     if(!root) root = document.body;
-    // root may be the anchor, li.product, or a column
-    const titleEl = root.querySelector && root.querySelector('.woocommerce-loop-product__title, h2, h3, h4, .product-title, .ct-dynamic-data a');
-    const title = titleEl ? titleEl.textContent.trim() : (root.getAttribute && (root.getAttribute('data-title') || root.textContent && root.textContent.trim().slice(0,60))) || 'Product';
-    const priceEl = root.querySelector && root.querySelector('.woocommerce-Price-amount, .price, .amount');
+    // Prefer the nearest product container so we don't accidentally read the button text
+    const container = (root.closest && (root.closest('li.product') || root.closest('.product') || root.closest('.wp-block-column'))) || root;
+
+    // title: try several selectors inside the product container and avoid reading button/anchor text
+    const titleSelectors = ['.woocommerce-loop-product__title', '.product-title', '.ct-woo-card-title', 'h2', 'h3', 'h4', '.ct-dynamic-data a'];
+    let titleEl = null;
+    for(const s of titleSelectors){ if(container.querySelector && container.querySelector(s)){ titleEl = container.querySelector(s); break; } }
+    let title = titleEl ? titleEl.textContent.trim() : (container.getAttribute && container.getAttribute('data-title')) || '';
+    if(!title){
+      // fallback: find an anchor that is not an add-to-cart button
+      const link = container.querySelector && container.querySelector('a:not(.add_to_cart_button):not(.front-add-to-cart)');
+      if(link) title = link.textContent.trim();
+    }
+
+    const priceEl = container.querySelector && container.querySelector('.woocommerce-Price-amount, .price, .amount, .ct-price');
     const priceText = priceEl? priceEl.textContent.trim() : '';
     const price = formatPriceNumber(priceText);
-    const imgEl = root.querySelector && root.querySelector('img');
+    const imgEl = container.querySelector && (container.querySelector('img') || container.querySelector('.ct-media-container img'));
     const img = imgEl && imgEl.src ? imgEl.src : '';
 
     let id = '';
-    if(root && root.getAttribute){ id = root.getAttribute('data-product-id') || root.getAttribute('data-product_id') || root.getAttribute('data-wc-key') || ''; }
-    if(!id && root && root.className){ const m = String(root.className).match(/post-(\d+)/); if(m) id = m[1]; }
-    if(!id) id = title + '|' + price;
-    return { id, title, price, img };
+    if(container && container.getAttribute){ id = container.getAttribute('data-product-id') || container.getAttribute('data-product_id') || container.getAttribute('data-wc-key') || ''; }
+    if(!id && container && container.className){ const m = String(container.className).match(/post-(\d+)/); if(m) id = m[1]; }
+    if(!id) id = (title || 'Product') + '|' + price;
+    return { id, title: title || 'Product', price, img };
   }
 
   function addToCart(item){
@@ -118,7 +129,7 @@
 
     content.innerHTML = ''; content.appendChild(ul); content.appendChild(footer);
 
-    const co = document.getElementById('front-cart-checkout'); if(co) co.addEventListener('click', ()=>{ window.location.href = '/cart/'; });
+    const co = document.getElementById('front-cart-checkout'); if(co) co.addEventListener('click', ()=>{ window.location.href = './shop.html'; });
   }
 
   function openCart(){ const panel = document.querySelector('#woo-cart-panel'); if(!panel) return; panel.classList.add('open'); renderCart(); }
@@ -150,19 +161,87 @@
   function attachAddButtons(){
     const items = document.querySelectorAll('ul.products li.product, .wc-block-product, .type-product');
     items.forEach(li=>{
-      if(!li || li.querySelector('.front-add-to-cart')) return;
+      if(!li) return;
+      // if we've already injected a button and there's no original anchor, skip
+      if(li.querySelector('button.front-add-to-cart') && !li.querySelector('a.add_to_cart_button')) return;
       const existing = li.querySelector('a.add_to_cart_button, .button.add_to_cart, .add-to-cart, a.button');
-      const btn = document.createElement('button'); btn.className='front-add-to-cart'; btn.type='button'; btn.textContent='Add to cart';
-      btn.addEventListener('click', ()=>{ const data = findProductData(li); addToCart(data); });
-      if(existing && existing.parentNode){ existing.parentNode.insertBefore(btn, existing.nextSibling); }
-      else{ const container = li.querySelector('.wp-block-column, .ct-dynamic-data, .ct-dynamic-media') || li; container.appendChild(btn); }
+
+      const btn = document.createElement('button');
+      btn.type='button';
+      btn.className = 'front-add-to-cart';
+      btn.textContent = 'Add to cart';
+
+      // If theme anchor exists: replace it with our button but keep its classes/attributes so styling remains identical
+      if(existing){
+        try{
+          // copy class names so the button looks like the original anchor
+          if(existing.className) btn.className = existing.className + ' front-add-to-cart';
+          // copy inline style
+          if(existing.getAttribute && existing.getAttribute('style')) btn.setAttribute('style', existing.getAttribute('style'));
+          // copy data-* attributes (product id etc.) to the button so our handler can use them
+          Array.from(existing.attributes).forEach(attr=>{
+            if(/^data-/i.test(attr.name)) btn.setAttribute(attr.name, attr.value);
+          });
+          existing.parentNode.replaceChild(btn, existing);
+        }catch(e){
+          if(existing.parentNode) existing.parentNode.insertBefore(btn, existing.nextSibling);
+        }
+      } else {
+        const container = li.querySelector('.wp-block-column, .ct-dynamic-data, .ct-dynamic-media') || li;
+        container.appendChild(btn);
+      }
+
+      btn.addEventListener('click', ()=>{
+        const data = findProductData(li);
+        const pid = btn.getAttribute && (btn.getAttribute('data-product_id') || btn.getAttribute('data-product-id'));
+        if(pid) data.id = pid + '|' + (data.id || data.title);
+        addToCart(data);
+      });
+    });
+  }
+
+  // Convert existing theme anchors (a.add_to_cart_button etc.) into <button> elements so the page shows only our button
+  function convertThemeAnchors(){
+    const anchors = Array.from(document.querySelectorAll('a.add_to_cart_button, a.button.product_type_simple.add_to_cart_button, a.button.product_type_simple'));
+    anchors.forEach(a=>{
+      // skip if already handled (we replaced it with a button earlier)
+      if(!a.parentNode) return;
+      // create replacement button
+      const btn = document.createElement('button'); btn.type='button';
+      // copy classes and add marker class
+      if(a.className) btn.className = a.className + ' front-add-to-cart'; else btn.className = 'front-add-to-cart';
+      // copy inline styles
+      if(a.getAttribute && a.getAttribute('style')) btn.setAttribute('style', a.getAttribute('style'));
+      // copy data-* attributes
+      Array.from(a.attributes).forEach(attr=>{ if(/^data-/i.test(attr.name)) btn.setAttribute(attr.name, attr.value); });
+      // copy text
+      btn.textContent = a.textContent.trim() || 'Add to cart';
+
+      // hook click to addToCart
+      btn.addEventListener('click', function(){
+        const li = a.closest && (a.closest('li.product') || a.closest('.product') || a.closest('.wp-block-column'));
+        const data = findProductData(li || btn);
+        const pid = btn.getAttribute && (btn.getAttribute('data-product_id') || btn.getAttribute('data-product-id'));
+        if(pid) data.id = pid + '|' + (data.id || data.title);
+        addToCart(data);
+      });
+
+      // replace anchor with button
+      try{ a.parentNode.replaceChild(btn, a); }catch(e){}
     });
   }
 
   document.addEventListener('DOMContentLoaded', ()=>{
+    // Convert theme anchors to buttons so there's only one add-to-cart control per product
+    convertThemeAnchors();
     attachAddButtons(); renderCart();
+
+    // Observe product lists for dynamic changes and keep converting/re-injecting as needed
     const ul = document.querySelector('ul.products');
-    if(ul){ const obs = new MutationObserver(()=>{ attachAddButtons(); }); obs.observe(ul,{childList:true,subtree:true}); }
+    if(ul){ const obs = new MutationObserver(()=>{ convertThemeAnchors(); attachAddButtons(); }); obs.observe(ul,{childList:true,subtree:true}); }
+    // global observer for late-added anchors
+    const bodyObs = new MutationObserver(()=>{ convertThemeAnchors(); });
+    bodyObs.observe(document.body, { childList:true, subtree:true });
   });
 
   window.peekabooCart = { loadCart, saveCart, renderCart, addToCart };

@@ -9,7 +9,21 @@
 .front-cart-controls{display:flex;gap:6px;align-items:center}
 .front-cart-controls button{padding:4px 8px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer}
 .front-cart-empty{padding:12px;color:#666}
-
+.product_type_simple.add_to_cart_button.ajax_add_to_cart.front-add-to-cart:hover {
+  color: black;
+}
+.front-add-to-cart{
+    background: #eee;
+  color: #5a5a5a;
+  font-weight: normal;
+  font-size: small;
+}
+.fb-cart-badge{
+    display: none;
+}
+[class*="add_to_cart_button"].loading::after{
+    display: none;
+}
 /* Basic slide-in panel for #woo-cart-panel to ensure it's visible on any page */
 /* #woo-cart-panel{position:fixed;right:0;top:0;bottom:0;width:360px;background:#fff;box-shadow:-20px 0 40px rgba(0,0,0,0.12);z-index:9999;transform:translateX(110%);transition:transform .28s ease;display:flex;flex-direction:column}
 #woo-cart-panel.open{transform:translateX(0)}
