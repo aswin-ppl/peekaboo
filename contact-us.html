@@ -3044,18 +3044,6 @@
                       data-auto-open="archive"
                     >
                       <span class="screen-reader-text">Shopping cart</span
-                      ><span
-                        class="ct-label ct-hidden-sm ct-hidden-md"
-                        data-price="yes"
-                        ><span class="ct-amount"
-                          ><span class="woocommerce-Price-amount amount"
-                            ><bdi
-                              ><span class="woocommerce-Price-currencySymbol"
-                                >&#36;</span
-                              >0.00</bdi
-                            ></span
-                          ></span
-                        ></span
                       >
                       <span class="ct-icon-container">
                         <span
@@ -3134,18 +3122,6 @@
                       data-auto-open="archive"
                     >
                       <span class="screen-reader-text">Shopping cart</span
-                      ><span
-                        class="ct-label ct-hidden-sm ct-hidden-md"
-                        data-price="yes"
-                        ><span class="ct-amount"
-                          ><span class="woocommerce-Price-amount amount"
-                            ><bdi
-                              ><span class="woocommerce-Price-currencySymbol"
-                                >&#36;</span
-                              >0.00</bdi
-                            ></span
-                          ></span
-                        ></span
                       >
                       <span class="ct-icon-container">
                         <span
@@ -5175,3 +5151,20 @@
     ></script>
   </body>
 </html>
+
+<!-- Shared cart panel and assets -->
+<div id="woo-cart-panel" class="ct-panel" data-behaviour="right-side" aria-label="Shopping cart panel">
+  <div class="ct-panel-inner">
+    <div class="ct-panel-actions">
+      <span class="ct-panel-heading">Shopping Cart</span>
+      <button class="ct-toggle-close" aria-label="Close cart drawer">×</button>
+    </div>
+    <div class="ct-panel-content">
+      <div class="ct-panel-content-inner">
+        <p class="woocommerce-mini-cart__empty-message">No products in the cart.</p>
+      </div>
+    </div>
+  </div>
+</div>
+<link rel="stylesheet" href="assets/cart.css">
+<script defer src="assets/cart.js"></script>

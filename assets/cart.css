@@ -1,0 +1,18 @@
+/* Shared front-end cart styles for peekaboo */
+.fb-cart-badge{background:#ff4d4f;color:#fff;border-radius:999px;padding:2px 6px;font-size:12px;display:inline-block;margin-left:6px}
+.front-add-to-cart{background:#1e73be;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer;font-weight:600}
+.front-cart-list{list-style:none;padding:0;margin:0}
+.front-cart-item{display:flex;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid #eee}
+.front-cart-item img{width:56px;height:56px;object-fit:cover;border-radius:6px}
+.front-cart-item .meta{flex:1}
+.front-cart-item .meta .title{font-weight:600}
+.front-cart-controls{display:flex;gap:6px;align-items:center}
+.front-cart-controls button{padding:4px 8px;border:1px solid #ddd;background:#fff;border-radius:4px;cursor:pointer}
+.front-cart-empty{padding:12px;color:#666}
+
+/* Basic slide-in panel for #woo-cart-panel to ensure it's visible on any page */
+/* #woo-cart-panel{position:fixed;right:0;top:0;bottom:0;width:360px;background:#fff;box-shadow:-20px 0 40px rgba(0,0,0,0.12);z-index:9999;transform:translateX(110%);transition:transform .28s ease;display:flex;flex-direction:column}
+#woo-cart-panel.open{transform:translateX(0)}
+#woo-cart-panel .ct-panel-actions{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #eee}
+#woo-cart-panel .ct-panel-content{overflow:auto;padding:12px 16px;flex:1}
+#woo-cart-panel .ct-panel-content-inner{display:block} */
